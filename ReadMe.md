@@ -33,13 +33,13 @@ python nuclei_detection.py
 
 2. You can either use the default values by just pressing `Enter` or input your own values.
 
-![MaskSelector](./docs/images/2_maskSelector.png)
+![MaskSelector](./docs/images/2_MaskSelector.png)
 
 3. A window will pop up with the original image and a mask of the detected nuclei. You can adjust the HSV values using the trackbars to fine-tune the detection. Use the Value Indicators to help you find the right values. 
    
 4. Then when the mask looks good, press `d` (for done) to continue.
    
-![Output](./docs/images/3_output.png)
+![Output](./docs/images/3_Output.png)
 
 5. You will now see the cleaned mask that was used (if you chose to clean it), the original image with bounding boxes around the detected nuclei, and the number of nuclei found outputted in the console.
 6. The output image will be saved in the same directory as the script with the same name as the input image but with `_labeled` appended to the name.
