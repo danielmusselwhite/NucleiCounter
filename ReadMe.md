@@ -26,10 +26,7 @@ python nuclei_detection.py
 ```
 ![InitialInputs](./docs/images/1_initialInputs.png)
 
-1. You will be prompted to enter the:
-   1. Image Path
-   2. If you want to circle all found nuclei or only the large ones (recommend all)
-   3. If you want to clean the mask (recommended to clean)
+1. You will be prompted to enter the: Image Path
 
 2. You can either use the default values by just pressing `Enter` or input your own values.
 
