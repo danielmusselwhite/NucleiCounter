@@ -6,31 +6,20 @@ import os
 
 # Set default values
 default_image_path = "sample.png"  # Change to your image path
-default_printAllCircledNuclei = True  # Default to print all highlighted nuclei
-default_cleanMask = True  # Default to clean the mask
 
 # Input for image path
 image_path = input(f"Enter image path (default: {default_image_path}): ") or default_image_path
 imageName, fileType = os.path.splitext(os.path.basename(image_path))
 
-# Input for printAllCircledNuclei
-printAllCircledNuclei_input = input(f"Do you want to print all highlighted nuclei (default: {default_printAllCircledNuclei})? (y/n): ")
-printAllCircledNuclei = printAllCircledNuclei_input.lower() == 'y' if printAllCircledNuclei_input else default_printAllCircledNuclei
-
-# Input for cleanMask
-cleanMask_input = input(f"Do you want to clean the mask (default: {default_cleanMask})? (y/n): ")
-cleanMask = cleanMask_input.lower() == 'y' if cleanMask_input else default_cleanMask
 
 # Output results to verify
 print(f"Image Path: {image_path}")
-print(f"Print All Circled Nuclei: {printAllCircledNuclei}")
-print(f"Clean Mask: {cleanMask}")
 
 #endregion
 
 #region Functions
 
-# Function to update the mask with trackbar values
+# Function to update the mask and the output image with tracked nuclei
 def update_mask(x):
     try:
         # Get trackbar positions only if the window is still open
@@ -41,11 +30,15 @@ def update_mask(x):
             s_max = cv2.getTrackbarPos("Sat Max", "Mask")
             v_min = cv2.getTrackbarPos("Val Min", "Mask")
             v_max = cv2.getTrackbarPos("Val Max", "Mask")
+            kernel_size = cv2.getTrackbarPos("Kernel Size", "Mask")
 
             # Apply threshold based on current trackbar positions
             lower_purple = np.array([h_min, s_min, v_min])
             upper_purple = np.array([h_max, s_max, v_max])
             mask = cv2.inRange(hsv_image, lower_purple, upper_purple)
+
+            kernel = np.ones((kernel_size, kernel_size), np.uint8)
+            mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel, iterations=1)
 
             # Display the mask
             cv2.imshow("Mask", mask)
@@ -64,6 +57,21 @@ def update_mask(x):
             # Show the color squares
             cv2.imshow("Value Indicators", color_square)
 
+            # Use connected components to label each detected nucleus in the mask
+            num_labels, labels, stats, centroids = cv2.connectedComponentsWithStats(mask, connectivity=8)
+
+            # Make a copy of the original image to draw on
+            output_image = image.copy()
+
+            # Draw bounding boxes around detected nuclei and label each one
+            for i in range(1, num_labels):  # Skip the background label (label 0)
+                x, y, w, h, area = stats[i]
+                cv2.rectangle(output_image, (x, y), (x + w, y + h), (0, 255, 0), 1)
+                # cv2.putText(output_image, str(i), (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.1, (0, 0, 255), 2)
+
+            # Show the dynamically updated output image
+            cv2.imshow("Labeled Nuclei", output_image)
+
     except Exception as e:
         print(f"Error updating mask: {e}")
 
@@ -78,6 +86,7 @@ def done_callback():
         s_max = cv2.getTrackbarPos("Sat Max", "Mask")
         v_min = cv2.getTrackbarPos("Val Min", "Mask")
         v_max = cv2.getTrackbarPos("Val Max", "Mask")
+        kernel_size = cv2.getTrackbarPos("Kernel Size", "Mask")
 
         # Set the lower and upper bounds for masking using trackbar values
         lower_purple = np.array([h_min, s_min, v_min])
@@ -85,6 +94,7 @@ def done_callback():
         
         print(f"Final HSV Min: [{h_min}, {s_min}, {v_min}]")
         print(f"Final HSV Max: [{h_max}, {s_max}, {v_max}]")
+        print(f"Final Kernel Size: {kernel_size}")
 
     # Close all windows
     cv2.destroyAllWindows()
@@ -96,19 +106,22 @@ def done_callback():
 # Load the image
 image = cv2.imread(image_path)
 
+# Display the input image
+cv2.imshow("Input Image", image)
+
 # Check if the image was loaded successfully
 if image is None:
     print(f"Error: Could not load image at {image_path}")
     exit()
 
 # Display the input image
-cv2.imshow("Input Image", image)
+#cv2.imshow("Input Image", image)
 
 # Convert to HSV color space
 hsv_image = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
 
 # Display the HSV image for debugging
-cv2.imshow("HSV Image", hsv_image)
+#cv2.imshow("HSV Image", hsv_image)
 
 # Create a resizable window and trackbars for adjusting HSV ranges
 cv2.namedWindow("Mask", cv2.WINDOW_NORMAL)  # Make window resizable
@@ -118,6 +131,7 @@ cv2.createTrackbar("Sat Min", "Mask", 0, 255, update_mask)
 cv2.createTrackbar("Sat Max", "Mask", 255, 255, update_mask)
 cv2.createTrackbar("Val Min", "Mask", 0, 255, update_mask)
 cv2.createTrackbar("Val Max", "Mask", 255, 255, update_mask)
+cv2.createTrackbar("Kernel Size", "Mask", 1, 20, update_mask)  # Trackbar for kernel size
 
 # Create a resizable window for the value indicators
 cv2.namedWindow("Value Indicators", cv2.WINDOW_NORMAL)  # Make window resizable
@@ -136,38 +150,13 @@ while True:
         upper_purple = np.array([cv2.getTrackbarPos("Hue Max", "Mask"),
             cv2.getTrackbarPos("Sat Max", "Mask"),
             cv2.getTrackbarPos("Val Max", "Mask")])
+        kernel_size = cv2.getTrackbarPos("Kernel Size", "Mask")
         done_callback()
         break
-    elif key == 27:  # ESC key to exit
-        cv2.destroyAllWindows()
-        exit()
-
-# Get the lower_purple and upper_purple hsv values from the trackbars
-# Moved this part into done_callback to ensure window is open
-# Removed the redundant code since it's handled in done_callback
 
 # Threshold the image to create a binary mask for purple regions
 mask = cv2.inRange(hsv_image, lower_purple, upper_purple)
-
-
-
-
-
-# Optional: Morphological opening to reduce small noise in mask
-# MODIFY THIS EG IF YOU WANT SMALL ONES, AS NUCLEI MAY BE VERY SMALL SO WE MAY NOT WANT TO REMOVE THEM
-if(cleanMask):
-    kernel = np.ones((2, 2), np.uint8)
-    cleaned_mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel, iterations=1)
-else:
-    cleaned_mask = mask # quick and dirty if you just want to keep it the same
-
-
-
-
-
-
-# Display the mask for debugging
-cv2.imshow("Cleaned Mask", cleaned_mask)
+cleaned_mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, np.ones((kernel_size, kernel_size), np.uint8), iterations=1)
 
 # Use connected components to label each detected nucleus in the mask
 num_labels, labels, stats, centroids = cv2.connectedComponentsWithStats(cleaned_mask, connectivity=8)
@@ -175,9 +164,7 @@ num_labels, labels, stats, centroids = cv2.connectedComponentsWithStats(cleaned_
 # Draw bounding boxes around detected nuclei and label each one
 for i in range(1, num_labels):  # Skip the background label (label 0)
     x, y, w, h, area = stats[i]
-    if printAllCircledNuclei or 50 < area < 1000:  # Filter nuclei based on area
-        cv2.rectangle(image, (x, y), (x + w, y + h), (0, 255, 0), 1)
-        # cv2.putText(image, str(i), (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.1, (0, 0, 255), 2)
+    cv2.rectangle(image, (x, y), (x + w, y + h), (0, 255, 0), 1)
 
 # Construct the output filename using imageName and fileType
 output_filename = f"{imageName}_labeled{fileType}"
@@ -190,4 +177,3 @@ print(f"Labeled image saved as '{output_filename}'")
 cv2.imshow("Labeled Nuclei", image)
 cv2.waitKey(0)
 cv2.destroyAllWindows()
-

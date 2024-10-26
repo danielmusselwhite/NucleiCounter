@@ -35,11 +35,17 @@ python nuclei_detection.py
 
 ![MaskSelector](./docs/images/2_MaskSelector.png)
 
-3. A window will pop up with the original image and a mask of the detected nuclei. You can adjust the HSV values using the trackbars to fine-tune the detection. Use the Value Indicators to help you find the right values. 
+3. A window will pop up with:
+   1. The original image
+   2. The Labelled Nuclei
+   3. A mask selector, which will allow you to select the regions of the image that contain the nuclei, as determined by its HSV values (and a kernel size = degree of cleaning)
+   4. Value Indicators indicating the max and min hsv values
    
-4. Then when the mask looks good, press `d` (for done) to continue.
+4. Use this to adjust the mask to only include the nuclei, use the value indicators to hepl you select a valid colour range, then compare the mask and labelled nuclei against the input image
+   
+5. Then when the mask looks good, press `d` (for done) to continue.
    
 ![Output](./docs/images/3_Output.png)
 
-5. You will now see the cleaned mask that was used (if you chose to clean it), the original image with bounding boxes around the detected nuclei, and the number of nuclei found outputted in the console.
-6. The output image will be saved in the same directory as the script with the same name as the input image but with `_labeled` appended to the name.
+6. In the console you will now see the  HSV Min, HSV Max, and Kernel Size values you selected (for reference) alongside the number of nuclei detected.
+7. The output image will be saved in the same directory as the script with the same name as the input image but with `_labeled` appended to the name.
