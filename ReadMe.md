@@ -28,7 +28,7 @@ This Python script utilizes OpenCV to detect and label nuclei in an image based 
 To run the script, ensure you have your environment set up with the required packages, and execute:
 
 ```bash
-python nuclei_detection.py
+python NucleiCounter.py
 ```
 ![InitialInputs](./docs/images/1_initialInputs.png)
 
