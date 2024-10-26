@@ -19,6 +19,12 @@ This Python script utilizes OpenCV to detect and label nuclei in an image based 
 
 ## User Guide
 
+### Video Demonstration
+
+[![Watch the video](https://img.youtube.com/vi/qX7LA0Y-jfQ/maxresdefault.jpg)](https://youtu.be/qX7LA0Y-jfQ)
+
+### Instructions
+
 To run the script, ensure you have your environment set up with the required packages, and execute:
 
 ```bash
