@@ -4,12 +4,27 @@ import os
 
 #region Variables to change scripts functionality
 
-# Define image path and extract image name and file type
-image_path = "sample2.jpg"  # Change to your image path
+# Set default values
+default_image_path = "sample.png"  # Change to your image path
+default_printAllCircledNuclei = True  # Default to print all highlighted nuclei
+default_cleanMask = True  # Default to clean the mask
+
+# Input for image path
+image_path = input(f"Enter image path (default: {default_image_path}): ") or default_image_path
 imageName, fileType = os.path.splitext(os.path.basename(image_path))
 
-printAllCircledNuclei = True # do you want to print all highlighted nuclei or filter out small ones?
-cleanMask = True # do you want to clean the mask (eg auto filter out small areas from being included in the count)?
+# Input for printAllCircledNuclei
+printAllCircledNuclei_input = input(f"Do you want to print all highlighted nuclei (default: {default_printAllCircledNuclei})? (y/n): ")
+printAllCircledNuclei = printAllCircledNuclei_input.lower() == 'y' if printAllCircledNuclei_input else default_printAllCircledNuclei
+
+# Input for cleanMask
+cleanMask_input = input(f"Do you want to clean the mask (default: {default_cleanMask})? (y/n): ")
+cleanMask = cleanMask_input.lower() == 'y' if cleanMask_input else default_cleanMask
+
+# Output results to verify
+print(f"Image Path: {image_path}")
+print(f"Print All Circled Nuclei: {printAllCircledNuclei}")
+print(f"Clean Mask: {cleanMask}")
 
 #endregion
 
@@ -88,14 +103,12 @@ if image is None:
 
 # Display the input image
 cv2.imshow("Input Image", image)
-cv2.waitKey(0)
 
 # Convert to HSV color space
 hsv_image = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
 
 # Display the HSV image for debugging
 cv2.imshow("HSV Image", hsv_image)
-cv2.waitKey(0)
 
 # Create a resizable window and trackbars for adjusting HSV ranges
 cv2.namedWindow("Mask", cv2.WINDOW_NORMAL)  # Make window resizable
@@ -143,7 +156,7 @@ mask = cv2.inRange(hsv_image, lower_purple, upper_purple)
 # Optional: Morphological opening to reduce small noise in mask
 # MODIFY THIS EG IF YOU WANT SMALL ONES, AS NUCLEI MAY BE VERY SMALL SO WE MAY NOT WANT TO REMOVE THEM
 if(cleanMask):
-    kernel = np.ones((0, 0), np.uint8)
+    kernel = np.ones((2, 2), np.uint8)
     cleaned_mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel, iterations=1)
 else:
     cleaned_mask = mask # quick and dirty if you just want to keep it the same
@@ -155,7 +168,6 @@ else:
 
 # Display the mask for debugging
 cv2.imshow("Cleaned Mask", cleaned_mask)
-cv2.waitKey(0)
 
 # Use connected components to label each detected nucleus in the mask
 num_labels, labels, stats, centroids = cv2.connectedComponentsWithStats(cleaned_mask, connectivity=8)
@@ -165,7 +177,7 @@ for i in range(1, num_labels):  # Skip the background label (label 0)
     x, y, w, h, area = stats[i]
     if printAllCircledNuclei or 50 < area < 1000:  # Filter nuclei based on area
         cv2.rectangle(image, (x, y), (x + w, y + h), (0, 255, 0), 1)
-        cv2.putText(image, str(i), (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.1, (0, 0, 255), 2)
+        # cv2.putText(image, str(i), (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.1, (0, 0, 255), 2)
 
 # Construct the output filename using imageName and fileType
 output_filename = f"{imageName}_labeled{fileType}"
